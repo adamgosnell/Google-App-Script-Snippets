@@ -1,0 +1,37 @@
+function ReportingReminder() {
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet(); // get bound spreadsheet (ss)
+  var sheet = ss.getSheetByName('Did Not Report List'); // get bound sheet (basically just =filter(reporters!A:A, B:B="N"))
+  var lastRow = sheet.getRange("C1:C").getLastRow(); // gets the last row
+  var emails = sheet.getRange("C1:C" + lastRow).getValues().flat().filter(String).join(","); // formats the emails into a CSV-like array
+  var runValue = ss.getSheetByName('Admin').getRange("D4").getValue(); // this links to an admin dashboard, if value = Y the script runs
+  var schDateValue = ss.getSheetByName('Admin').getRange("D5").getValue(); // this links to an admin dashboard, if value = 8, the script runs on the 8th of each month
+  var today = new Date(); // today's date
+  var body = HtmlService.createTemplateFromFile('Template').evaluate().getContent(); // uses HTML for email 
+
+  // My HTML isn't very good, so I just send the email I want
+  // then I "View Source," get the HTML and find the values I want to replace
+
+  console.log("");
+  console.log("START function affiliateReportReminder()");
+  console.log("runValue = " + runValue);
+
+  if (runValue == "Y") { // If the dashboard has the runValue set to Y ...
+    if (today.getDate() == schDateValue) { // ... and if today is the Scheduled Date Value
+      MailApp.sendEmail({ // Send an email
+      to: "adam.gosnell@gmail.com",
+      subject: "REMINDER: Your End-of-Month Affiliate Report is Due",
+      htmlBody: body,
+      bcc: emails,
+      })
+      console.log("Emails Sent");
+      console.log("END");
+    } else {
+      console.log("Today is not the schDateValue");
+      console.log("Emails Not Sent");
+      console.log("END");
+    }
+  } else {
+    console.log("END"); 
+  }
+};
