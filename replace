@@ -1,0 +1,49 @@
+/**
+ * When Google Form information is dropped in Google Sheets, it drops the entire answer (e.g. "Prefer not to say"). 
+ * Sometimes that can be unhelpful. I've written a Google App Script snippet that, when it's triggered, replaces those long 
+ * answers with short answers (e.g. "Yes" to "y", "I would prefer to be called on my cell, but you can email me if 
+ * you need to" to "cell>email", etc.).
+ * 
+ * Here's the sample form: https://docs.google.com/forms/d/e/1FAIpQLSd3uMohLpD5Znja2AY-bZMdUGvffCAzA34HCi0LYMKD3kiJGQ/viewform
+ * Here's the sample sheet: https://docs.google.com/spreadsheets/d/1N5rjp4x4T9iVJbV5YE09MmXYEcbYh-y3FlwT3VmIpeY/edit?usp=sharing
+ * 
+ * The "format_key" sheet is where you'd declare the original and reformatted values.
+ * I usually trigger mine on form submit, but for tutorial purposes, I've made a custom menu (Admin > Format Inputs). 
+ * 
+ * asg+
+ */
+
+ function onOpen() {
+    var ui = SpreadsheetApp.getUi();
+    ui.createMenu('Admin')
+        .addItem('Format Inputs', 'format_input')
+        .addToUi();
+  }
+  
+  function format_input() {
+    var ss = SpreadsheetApp.getActiveSpreadsheet(); // get bound spreadsheet (ss)
+    var sheet = ss.getSheetByName("Form Responses 3"); // get bound sheet
+    var lastRow = sheet.getLastRow(); // get last row 
+    var lastColumn = sheet.getLastColumn(); // get last column
+    var range = sheet.getRange(1, 1, lastRow, lastColumn); // get the range
+  
+    var to_replace = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("format_key").getRange("A3:A").getValues().flat().filter(String); // populate an array with "format key" to_replace values
+    var replace_with = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("format_key").getRange("B3:B").getValues().flat().filter(String); // populate an array with "format key" replace_with values
+  
+    var data = range.getValues(); // get the data from the range
+  
+    // this is a series of nested for-loops
+    // it basically runs for c=0, then c=1, etc., 
+    // when it gets to the end, it increments r up to 1 and then starts c over at 0
+    // when it get to the end of r, it increments i up to 1 and starts r and c over at 0
+    for (i = 0; i < to_replace.length; i++) {
+      for (r = 0; r < lastRow; r++) {
+        for (c = 0; c < lastColumn; c++) {
+          if (data[r][c] == to_replace[i]) { // if you find a "to_replace" value 
+            data[r][c] = replace_with[i]; // replace it with the matching "replace_with" value
+          }
+        }
+      }
+    }
+    range.setValues(data); // write new data to the range
+  }
