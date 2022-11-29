@@ -126,12 +126,12 @@ console.log(previous_meeting_folderID);
 
     // email reminders to (a) create the event, and (b) to edit the agenda accordingly.
     MailApp.sendEmail({
-      to: "adam.gosnell@isaiah40foundation.org",
+      to: "[...]", // redacted
       subject: "Create Calendar Event",
       body: "This is an automatic message.\n\nPlease create a new event for " + folder_name + " and add these to the description: \n\nYou can find the Board Meeting Folder here: " + meeting_folderURL + "\n\nYou can find the Agenda here: " + agendaURL,
     })
     MailApp.sendEmail({
-      to: "adam.gosnell@isaiah40foundation.org",
+      to: "[...]", // refacted
       subject: "New Board Meeting Folder/Agenda Created",
       body: "This is an automatic message.\n\nA new Meeting Folder and Agenda have been created for the upcoming Board Meeting.\n\nYou can find the Board Meeting Folder here: " + meeting_folderURL + "\n\nYou can find the Agenda here: " + agendaURL,
     })
