@@ -66,7 +66,7 @@ function boardMeetingGenerator() {
     }
 
   // this checks whether the meeting folder exists already. If it does, it find the ID. If it doesn't, it creates one with minutes-folders, a report-folder, and an agenda.
-  var folder_name = meeting.year + meeting.month + meeting.day + " " + "Board Meeting" + " (" + meeting.boards + ")" // declares the folder name
+  var folder_name = meeting.year.toString() + meeting.month.toString() + meeting.day.toString() + " " + "Board Meeting" + " (" + meeting.boards + ")" // declares the folder name
   year_folder = DriveApp.getFolderById(existing_year_folderID); // gets the year-folder ID from the previous section
   var meeting_folders = year_folder.getFolders(); // gets met folders from the meetings (within the year-folder)
   var creation_dates = []; // declares an array creation_dates
