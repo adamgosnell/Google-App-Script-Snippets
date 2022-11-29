@@ -1,0 +1,139 @@
+/**
+ * This is more intensive than some of my other snippets, but I think it's
+ * instructive to include the whole function. I have a form on the organization
+ * Google Drive called a Board Meeting Generator. Answers from that form drop
+ * into a spreadsheet where this script is bound. This script (a) gets the info
+ * from the spreadsheet, (b) checks whether the appropriate folders already exist, 
+ * (c) if not, creates them, and (d) emails relevent staff accordingly. 
+ */
+ 
+function boardMeetingGenerator() {
+
+  // This pulls the data from the sheet
+    var ss = SpreadsheetApp.getActiveSpreadsheet(); // set variable "ss" as the bound spreadsheet. 
+    var sheet = ss.getActiveSheet(); // this spreadsheet only has one sheet, so just pull the active one
+    var ssURL = ss.getUrl();
+    var lastRow = ss.getRange("B1:B").getLastRow(); // find the last row of the spreadsheet
+  
+  // This declares the object "meeting," and assigns some properties to it. 
+    var meeting = { // declares the object "meeting"
+      name: "Meeting Details from User Input", // the name of the object
+      date: new Date(sheet.getRange("B" + lastRow).getValues()), // grabs the date from the sheet and formats it as a new date. 
+      year: "", // declares an empty property "year," to be defined later
+      month: "", // declares an empty property "month," to be defined later
+      long_month: "", // declares an empty property "long_month," to be defined later
+      day: "", // declares an empty property "day," to be defined later
+      day_of_week: "", // declares an empty property "day_of_week," to be defined later
+      time: ss.getRange("C" + lastRow).getValue(), // grabs the time from the sheet assigns it as a property
+      location: ss.getRange("D" + lastRow).getValue(), // grabs the location from the sheet assigns it as a property
+      boards: ss.getRange("E" + lastRow).getValue(), // grabs the boards from the sheet assigns it as a property
+    }
+
+  // This assigns the empty-properties (usually because they use a property from the original declaration) to object meeting 
+    meeting.year = meeting.date.getFullYear(); // get the year
+    meeting.month = meeting.date.getMonth()+1; // get the month (numeric)
+    if (meeting.month < 10) { // add a leading zero to the month if necessary
+      meeting.month = "0" + meeting.month;
+    }
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December']; // an array of long-months
+    meeting.long_month = months[meeting.date.getMonth()] // use the array of long-months to get the long-month of the meeting
+    meeting.day = meeting.date.getDate(); // get the date of the meeting
+    if (meeting.day < 10) { // add a leading zero to the date if necessary
+      meeting.day = "0" + meeting.day;
+    }
+    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; // an array of long-days
+    meeting.day_of_week = days[meeting.date.getDay()] // use the array of long-days to get the long-day of the meeting
+    
+    if (meeting.location == "Zoom") { // if it's a zoom meeting, format location to include "link forthcoming"
+      meeting.location = meeting.location + " (Link Forthcoming)" 
+    }
+
+  // this checks whether the year folder exists already, if it doesn't, it creates one
+    var board_meetings_parent_folder = DriveApp.getFolderById([...]); // gets the parent folder by id (redacted)
+    var board_meeting_year_folders = DriveApp.getFolderById([...]).getFolders(); // gets the folders
+    var existing_year_folderID = null; // sets an initial value for variable
+    while (board_meeting_year_folders.hasNext()) { // iterates through the folders, if it finds the year folder already, great
+      var year_folder = board_meeting_year_folders.next();
+      if (year_folder.getName() == meeting.year) {
+        existing_year_folderID = year_folder.getId();
+        console.log("Year folder already exists.");
+      }
+    }
+    if (existing_year_folderID == null) { // if this variable still has its original value
+      console.log("Year folder does not exist. Creating.");
+      var new_year_folder = board_meetings_parent_folder.createFolder(meeting.year); // create a new folder
+      existing_year_folderID = new_year_folder.getId(); // ... and get its ID
+    }
+
+  // this checks whether the meeting folder exists already. If it does, it find the ID. If it doesn't, it creates one with minutes-folders, a report-folder, and an agenda.
+  var folder_name = meeting.year + meeting.month + meeting.day + " " + "Board Meeting" + " (" + meeting.boards + ")" // declares the folder name
+  year_folder = DriveApp.getFolderById(existing_year_folderID); // gets the year-folder ID from the previous section
+  var meeting_folders = year_folder.getFolders(); // gets met folders from the meetings (within the year-folder)
+  var creation_dates = []; // declares an array creation_dates
+  var creation_folders = []; // declares an array creation_folders
+  var existing_meeting_folderID = null; // sets an initial value for the existing_meeting_folderID
+  while (meeting_folders.hasNext()) { // iterate through the meeting-folders
+    var meeting_folder = meeting_folders.next();
+    creation_dates.push(meeting_folder.getDateCreated()); // during the iteration, store the dates created
+    creation_folders.push(meeting_folder.getId()); // ... and the IDs
+    if (meeting_folder.getName() == folder_name) { // if you find the meeting folder, great
+      existing_meeting_folderID = meeting_folder.getId();
+      console.log("Meeting folder already exists.");
+    }
+  }
+  var max = new Date(Math.max.apply(Math, creation_dates)).toString(); // format the latest creation date
+  var index = ''; // sets an inital value for index
+  for (let i = 0; i < creation_dates.length; i++) { // iterate through the creation_dates
+    if (creation_dates[i] == max) { // when you find the latest creation date, note the index (we'll use this later)
+      index = i;
+    }
+  }
+var previous_meeting_folderID = creation_folders[index]; // this uses the index to get the previous meeting folder (where the previous meeting's minutes are)
+console.log(previous_meeting_folderID);
+  
+  // this section is intimidating, but it creates folders and subfolders for a Board meeting, creates an agenda, find-and-replaces text on the agenda, etc.
+  
+  if (existing_meeting_folderID == null) { 
+    console.log('Meeting folder does not exist. Creating.');
+    var meeting_folder = year_folder.createFolder(folder_name);
+    var meeting_folderURL = meeting_folder.getUrl();
+    console.log("Creating Minutes and Reports folders.");
+    var new_reports_folder = meeting_folder.createFolder("1. Reports");
+    var new_US_minutes_folder = meeting_folder.createFolder("2. Canadian Minutes");
+    var new_CAN_minutes_folder = meeting_folder.createFolder("3. US Minutes");
+    var agenda_template = DriveApp.getFileById('1Y5eXzzVA5RteiSebauRVz0buq2P72MME20QzFzh8En8');
+    var title = "Agenda for Board Meeting " + meeting.year + meeting.month + meeting.day + ", Isaiah Forty";
+    var agenda = agenda_template.makeCopy(title, meeting_folder);
+    var agendaURL = agenda.getUrl();
+    var agendaID = agenda.getId();
+    var doc = DocumentApp.openById(agendaID);
+    var body = doc.getBody();
+    body.replaceText('{boards}', meeting.boards.toString().toUpperCase());
+    body.replaceText('{day_of_week}', meeting.day_of_week);
+    body.replaceText('{long_month}', meeting.long_month);
+    body.replaceText('{day}', meeting.day);
+    body.replaceText('{year}', meeting.year);
+    body.replaceText('{time}', meeting.time);
+    body.replaceText('{year}', meeting.year);
+    body.replaceText('{location}', meeting.location);
+    body.replaceText('{previous_meeting_folderID}', previous_meeting_folderID);
+    var previous_meeting_folder = DriveApp.getFolderById(previous_meeting_folderID)
+    var previous_meeting_date = previous_meeting_folder.getName().substring(0,8);
+    var previous_meeting_month = months[parseInt(previous_meeting_date.substring(4,6))-1].substring(0,3);
+    var previous_meeting_day = parseInt(previous_meeting_date.substring(6,8));
+    previous_meeting_date = previous_meeting_month + " " + previous_meeting_day + ", " + previous_meeting_date.substring(0,4);
+    body.replaceText('{previous_meeting_date}', previous_meeting_date);
+
+    // email reminders to (a) create the event, and (b) to edit the agenda accordingly.
+    MailApp.sendEmail({
+      to: "adam.gosnell@isaiah40foundation.org",
+      subject: "Create Calendar Event",
+      body: "This is an automatic message.\n\nPlease create a new event for " + folder_name + " and add these to the description: \n\nYou can find the Board Meeting Folder here: " + meeting_folderURL + "\n\nYou can find the Agenda here: " + agendaURL,
+    })
+    MailApp.sendEmail({
+      to: "adam.gosnell@isaiah40foundation.org",
+      subject: "New Board Meeting Folder/Agenda Created",
+      body: "This is an automatic message.\n\nA new Meeting Folder and Agenda have been created for the upcoming Board Meeting.\n\nYou can find the Board Meeting Folder here: " + meeting_folderURL + "\n\nYou can find the Agenda here: " + agendaURL,
+    })
+  }
+}
