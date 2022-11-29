@@ -101,7 +101,7 @@ console.log(previous_meeting_folderID);
     var new_reports_folder = meeting_folder.createFolder("1. Reports");
     var new_US_minutes_folder = meeting_folder.createFolder("2. Canadian Minutes");
     var new_CAN_minutes_folder = meeting_folder.createFolder("3. US Minutes");
-    var agenda_template = DriveApp.getFileById('1Y5eXzzVA5RteiSebauRVz0buq2P72MME20QzFzh8En8');
+    var agenda_template = DriveApp.getFileById('[...]');
     var title = "Agenda for Board Meeting " + meeting.year + meeting.month + meeting.day + ", Isaiah Forty";
     var agenda = agenda_template.makeCopy(title, meeting_folder);
     var agendaURL = agenda.getUrl();
